@@ -115,8 +115,8 @@ def place_order(target, count, price, buying = True):
     
     return True
 
-greed = 1.1 # How much the stock should increase before selling
-max_loss = 0.98 # How much we are willing to sell for at its cheapest
+greed = 1.01 # How much the stock should increase before selling
+max_loss = 0.995 # How much we are willing to sell for at its cheapest
 
 def loop(target):
     global closed
@@ -126,7 +126,13 @@ def loop(target):
     bottom = min(elems)
     top = max(elems)
 
+    samples = len(elems)
+    odds = 0
+    for v in elems:
+        if bottom == v:
+            odds = odds + 1
 
+    print("Odds: ", odds)
 
     # We need to check if we have any orders places
     driver.get(buy_page(target))
@@ -135,7 +141,7 @@ def loop(target):
     if "Stängd" in status:
         # Sorry, they're closed
         closed = True
-        return False
+        return
     closed = False
 
     # What range we're happy with buying the stocks for
@@ -143,6 +149,7 @@ def loop(target):
     if (
             abs(current - bottom) <= delta and 
             not target.invested and 
+            odds > 5 and
             is_selling_or_buying() == ""
         ):
         # We want to buy and we don't own stock, and we're not selling
@@ -178,29 +185,30 @@ writen = False
 def main():
     global driver, writen, closed
 
-    try:
-        driver = webdriver.Firefox()
-        while True:
-            for target in stocks:
-                loop(target)
-                if closed:
-                    break
-                writen = False
+    while True:
+        try:
+            driver = webdriver.Firefox()
+            while True:
+                for target in stocks:
+                    loop(target)
+                    if closed:
+                        break
+                    writen = False
 
-            if closed:
-                # 15 minutes of sleep if it's closed
-                if not writen:
-                    print_time_stamp()
-                    print("Open soon?")
-                    writen = True
-                # Sleepy time
-                sleep(60 * 15)
-    except:
-        # Something went wrong
-        sleep(60)
-        print_time_stamp()
-        print("Trying again")
-        driver.close()
+                if closed:
+                    # 15 minutes of sleep if it's closed
+                    if not writen:
+                        print_time_stamp()
+                        print("Open soon?")
+                        writen = True
+                    # Sleepy time
+                    sleep(60 * 15)
+        except:
+            # Something went wrong
+            sleep(60)
+            print_time_stamp()
+            print("Trying again")
+            driver.close()
 
 if __name__ == "__main__":
     main()
