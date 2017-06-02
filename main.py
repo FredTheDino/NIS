@@ -115,7 +115,7 @@ def place_order(target, count, price, buying = True):
     
     return True
 
-greed = 1.01 # How much the stock should increase before selling
+greed = 1.005 # How much the stock should increase before selling
 max_loss = 0.995 # How much we are willing to sell for at its cheapest
 
 def loop(target):
