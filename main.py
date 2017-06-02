@@ -4,6 +4,7 @@ from selenium.webdriver.common.keys import Keys
 from time import sleep 
 from math import floor
 from seceret import *
+from stocks import *
 import re
 import datetime
 
@@ -114,8 +115,8 @@ def place_order(target, count, price, buying = True):
     
     return True
 
-greed = 0.1 # How much the stock should increase before selling
-max_loss = 0.2 # How much we are willing to sell for at its cheapest
+greed = 1.1 # How much the stock should increase before selling
+max_loss = 0.98 # How much we are willing to sell for at its cheapest
 
 def loop(target):
     global closed
@@ -138,14 +139,14 @@ def loop(target):
     closed = False
 
     # What range we're happy with buying the stocks for
-    delta = 0.01
+    delta = current * 0.005
     if (
             abs(current - bottom) <= delta and 
             not target.invested and 
             is_selling_or_buying() == ""
         ):
         # We want to buy and we don't own stock, and we're not selling
-        sell_price = current + greed
+        sell_price = current * greed
         count = floor(target.max_investment / sell_price)
         
         if count != 0:
@@ -154,7 +155,7 @@ def loop(target):
             target.owned_amount = 0
             target.buy_price = current
             target.greed_price = sell_price
-            target.loss_price = current - max_loss
+            target.loss_price = current * max_loss
 
             if place_order(target, count, current, True):
                 print_time_stamp()
@@ -163,8 +164,7 @@ def loop(target):
             print_time_stamp()
             print("Insufficent funds for transaction ({})".format(target.stock))
         
-    delta = 0.01
-    if ((current + delta <= target.loss_price or current >= target.greed_price)
+    if ((current <= target.loss_price or current >= target.greed_price)
             and is_selling_or_buying() == "" and target.invested):
         if place_order(target, target.owned_amount, current, False):
             target.owned_amount = 0
