@@ -1,37 +1,37 @@
 #!/usr/bin/python
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
+from selenium.webdriver.chrome.chrome_profile import ChromeProfile
 from time import sleep 
 from math import floor
+
 from seceret import *
 from stocks import *
+from log import *
+
 import re
-import datetime
 
 # Globals
-valid_input = re.compile("\d+,\d+")
+valid_digit = re.compile("\d+,\d+")
+valid_time = re.compile("\d+:\d+:\d+")
 site = "https://www.avanza.se/"
 closed = False
+writen = False
 
-def log(message):
-    stamp = get_time_stamp()
-    print(stamp)
-    print(message)
+driver = None
 
-    f = open("log.txt", "w")
-    f.write(stamp)
-    f.write("\n")
-    f.write(message)
-    f.write("\n")
-    f.flush()
-    f.close()
-
-def get_time_stamp():
-    now = datetime.datetime.now()
-    return "[{0:0>2}:{1:0>2}]".format(now.hour, now.minute)
+def get_stock_state(stock):
+    login()
+    goto_buy_page(stock)
+    transaction_in_progress = is_selling_or_buying()
+    
 
 def login():
     # This doesn't load, IDK why... Sleeping fixes it
+    if is_logged_in():
+        return
+
     sleep(1.0)
     driver.find_element_by_css_selector("button.logInLink").click()
     if auto_login:
@@ -54,10 +54,10 @@ def login():
         driver.find_element_by_css_selector("button.loginButton").click()
         sleep(0.1)
     else:
-        input("Press enter once you are logged in")
+        input("Press enter once you are logged in to procedee")
 
 def is_logged_in():
-    # Is is the register button, if it doesn't exist, we're logged in
+    # If the register button exists, we're logged in
     try:
         return driver.find_element_by_css_selector("a.register") == None
     except:
@@ -71,13 +71,11 @@ def is_selling_or_buying():
     for i in range(len(names)):
         # I know, don't judge
         if names[i].text.lower() in driver.title.lower():
-            print("Found page")
             index = i
             break
     
     if index == -1:
         return ""
-
     if "Sälj" in elems[i].text:
         return "sell"
     elif "Köp" in elems[i].text:
@@ -91,32 +89,58 @@ def is_selling():
 def is_buying():
     return "buy" in is_selling_or_buying()
 
-def trade_history_page(stock):
-    return site + "/aktier/dagens-avslut.html" + stock.stock
+class Trade(object):
+    time_left = 0
+    quantity = 0
+    price = 0
+    stock = None
+
+    def __init__(self, stock, hour, minute, quantity, price):
+        close_at_h = 17
+        close_at_m = 30
+        self.time_left = (close_at_h - hour) * 60 - minute + close_at_m
+        self.quantity = quantity
+        self.price = price
+        self.stock = stock
+        
 
 def get_trade_info_prices(target):
     # Navigate to the site
-    driver.get(trade_history_page(target))
+    goto_trade_history_page(target))
     if not is_logged_in():
         login()
         driver.get(trade_history_page(target))
 
-    elem = driver.find_elements_by_css_selector("td.tLeft + td.tLeft + td + td")
+    ammounts = driver.find_elements_by_css_selector("td.tLeft + td.tLeft + td")
+    prices = driver.find_elements_by_css_selector("td.tLeft + td.tLeft + td + td")
+    times = driver.find_elements_by_css_selector("td + td.last")
     out = []
-    for e in elem:
-        if valid_input.search(e.text):
-            out.append(float(e.text.replace(",", ".")))
+    for i in range(len(ammounts), -1, -1):
+        price    = float(prices[i].text.replace(",", "."))
+        hour     = int(times.text.split(":")[0])
+        minute   = int(times.text.split(":")[1])
+        quantity = int(ammount[i].text.strip())
+        out.append(Trade(target, hour, minute, quantity, price))
 
     return out
 
+def trade_history_page(stock):
+    return site + "/aktier/dagens-avslut.html" + stock.stock
+
+def goto_trade_history_page(stock):
+    driver.get(trade_history_page(stock))
+
 def buy_page(stock):
     return site + "/handla/aktier.html/kop" + stock.stock
+
+def goto_buy_page(stock):
+    driver.get(buy_page(stock))
 
 def place_order(target, count, price, buying = True):
     # Navigate to the site
     driver.get(buy_page(target))
     sleep(0.5)
-    if not is_logged_in():
+    while not is_logged_in():
         login()
         driver.get(buy_page(target))
 
@@ -159,9 +183,6 @@ def clear_orders(target):
         # I know, don't judge
         if names[i].text.lower() in driver.title.lower():
             elems[i].click()
-
-greed = 1.005 # Minimum profit
-max_loss = 0.95 # How much we are willing to sell for at its cheapest
 
 def round_to_nearest(value, rounding_factor):
     return round(value * rounding_factor) / rounding_factor
@@ -223,7 +244,7 @@ def loop(target):
         diff = True
 
     if diff:
-        log("({}) b: {}, t: {}, c: {}".format(target.stock, bottom, top, current))
+        log("({}) b: {}, t: {}, c: {}", target.stock, bottom, top, current)
 
     # What range we're happy with buying the stocks for
     if (
@@ -256,7 +277,8 @@ def loop(target):
         if place_order(target, target.count, target.greed_price, False):
             target.invested = False
             log("Selling ({}) For: {}, Profit: {}".format(
-                    target.stock, current, (current - target.buy_price) * target.count))
+                    target.stock, current, 
+                    (current - target.buy_price) * target.count))
 
             # This is needed for calculations
             target.count = 0
@@ -274,16 +296,28 @@ def loop(target):
     f.flush()
     f.close()
 
+def init():
+    global driver
+    log("Started driver")
 
-driver = None
-writen = False
+    profile = FirefoxProfile()
+
+    if quick_mode:
+        # Disable CSS
+        profile.set_preference('permissions.default.stylesheet', 2)
+        # Disable images
+        profile.set_preference('permissions.default.image', 2)
+        # Disable Flash
+        profile.set_preference('dom.ipc.plugins.enabled.libflashplayer.so',
+                'false')
+    driver = webdriver.Firefox(profile)
+
 def main():
     global driver, writen, closed
 
     while True:
         try:
-            log("Started")
-            driver = webdriver.Firefox()
+            init()
             while True:
                 for target in stocks:
                     loop(target)
@@ -294,22 +328,23 @@ def main():
                 if closed:
                     # 15 minutes of sleep if it's closed
                     if not writen:
-                        log("Open soon?")
+                        log("Stock is closed, reloading in {} seconds."
+                                .format(closed_refresh_time))
                         writen = True
                     # Sleepy time
-                    sleep(60 * 15)
+                    sleep(closed_refresh_time)
                 else:
-                    # We wait a while, no need to refresh like efery second.
-                    sleep(10)
+                    # We wait a while, no need to refresh like every second.
+                    sleep(reload_time)
         except Exception as e:
             print(e)
             # Something went wrong
-            log("Crashed")
+            retry_time = 60
+            log("Crashed, retrying in {} seconds.".format(retry_time))
 
             sleep(60)
             log("Trying again")
             driver.close()
-
 
 if __name__ == "__main__":
     main()

@@ -8,7 +8,16 @@
 # will do the loggin in.
 auto_login = False
 
-# Leave empty if un used, for your own protection
+# Leave empty if unused, for your own protection
 username = ""
 password = ""
 
+# If you want to skipp loading all those pesky CSS styles 
+# that just take time. It disable as much as it can.
+quick_mode = True
+
+# How long we should wait until we refresh.
+refresh_wait = 10
+
+# How long we should awit when it's closed.
+closed_refresh_time = 60 * 15

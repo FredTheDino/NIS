@@ -1,0 +1,47 @@
+Dependencies: 
+	Firefox
+	Geckodriver
+	Python3
+	Selenium (A Python package)
+
+Install process:
+
+Firefox:
+	You know how to install firefox.
+
+Geckodriver:
+	Install it from here:
+	https://github.com/mozilla/geckodriver/releases
+
+Python3:
+	Check to see if python is installed by opening a 
+	terminal and typing 
+	"python --version"
+
+	If it shows something like "Python 2.7.xx", try 
+	"python3 --version"
+
+	If nothing shows up install python.
+	Install python3 from www.python.org by choosing the 
+	appropriate OS.
+
+Selenium:
+	Check the PIP version with:
+		"pip --version"
+	It should be using python 3.x. If it's not,
+	check if this command works:
+		"pip3 --version"
+	If it does, you're golden and can run:
+		"pip install selenium"
+		or
+		"pip3 install selenium"
+
+You can now run NIS. Either with:
+	"python3 main.py"
+	or
+	"python main.py"
+depending on how it was installed.
+	
+
+
+
