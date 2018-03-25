@@ -1,7 +1,8 @@
 #!/usr/bin/python3
 # coding=utf-8
-
 import driver_interface as d
+from stocks import stocks as STOCKS
+from time import sleep 
 
 class stock_state(object):
     # Logik data
@@ -11,7 +12,7 @@ class stock_state(object):
     value_needs_update = True # Om vi ska updatera "value" snarast möjligt.
     set_at = 0 # När vi senast satte "value"
     time_left = 24 * 60 # Hur lång tid i minuter tills börsen stänger.
-    current_stock = None
+    stock = None
     
     placed_order = False # Om vi har placerat en order.
     holding = False # Om vi äger aktier.
@@ -29,6 +30,9 @@ class stock_state(object):
     bought_for = 0 # Hur mycket vi har köpt för.
     sold_for = 0 # Hur mycker vi har sålt för.
     max_buy = 0 # Dyraste vi köpt.
+
+    def __init__(self, stock):
+        self.stock = stock
 
     # Vi går ett tidssteg framåt.
     def update(self, trade, active_order):
@@ -55,10 +59,10 @@ class stock_state(object):
                 self.bought_for = self.bought_for + price
                 self.holding = True
 
+        print(active_order)
         self.last_active_order = active_order
         self.time_left = trade.time_left
         price = trade.price
-        self.current_stock = trade.stock # FIXME
         if "sell" in active_order and self.placed_order:
             # Hantera ordern så att vi inte DÖR
             return self.handle_sell(price)
@@ -75,7 +79,7 @@ class stock_state(object):
         return "DONE"
 
     # Beräknar det pris vi vill sälja för.
-    def get_sell_price(self)
+    def get_sell_price(self):
         # Hur mycket är vi villiga att sälja för.
         if self.time_left < 60:
             # Vi är desperata.
@@ -94,7 +98,7 @@ class stock_state(object):
 
     # Vi säljer
     def sell(self, price):
-        if (d.placed_order(self.current_stock, self.quantity, price, False)):
+        if (d.place_order(self.stock, self.quantity, price, False)):
             self.sell_price = price
             self.placed_order = True
 
@@ -122,8 +126,8 @@ class stock_state(object):
     # Vi köper.
     def buy(self, price):
         # Beräkna hur många vi vill köpa, vi vill alltid köpa så många som möjligt.
-        quantity = int(self.current_stock.max_investment / price)
-        if (d.placed_order(self.current_stock, quantity, price, True)):
+        quantity = int(self.stock.max_investment / price)
+        if (d.place_order(self.stock, quantity, price, True)):
             # Vad vi köpte för.
             self.buy_price = price
             self.placed_order = True
@@ -144,7 +148,7 @@ class stock_state(object):
         if price <= self.get_min_value():
             self.value = price
             self.peeked = 0
-            d.clear_orders(self.current_stock)
+            d.clear_orders(self.stock)
             return self.set_value(price)
 
     # Vi kollar om vi kan köpa.
@@ -155,7 +159,7 @@ class stock_state(object):
 
         # Om det var länge sedan vi satte värdet, updatera det.
         if 30 < self.time_left - self.set_at:
-            self.set_value(price):
+            self.set_value(price)
             return "Timedout, set value to {}".format(price)
         
         # En flagga som kollar om vi är tillbaka på värdet.
@@ -196,8 +200,23 @@ class stock_state(object):
         return ""
 
 def main():
-    driver_interface.init()
-    
+    d.init()
+    states = []
+    for stock in STOCKS:
+        states.append(stock_state(stock))
+
+    while True:
+        for state in states:
+            trans = d.get_stock_state(state.stock)
+            trades = d.get_trade_info_prices(state.stock)
+            for trade in trades:
+                if trans == None:
+                    trans = ""
+
+                state.update(trade, trans)
+
+
+        sleep(10)
 
 if __name__ == "__main__":
     main()

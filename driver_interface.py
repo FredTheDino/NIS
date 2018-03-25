@@ -1,8 +1,6 @@
-#!/usr/bin/python
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
-from selenium.webdriver.chrome.chrome_profile import ChromeProfile
 from time import sleep 
 from math import floor
 
@@ -106,20 +104,21 @@ class Trade(object):
 
 def get_trade_info_prices(target):
     # Navigate to the site
-    goto_trade_history_page(target))
+    goto_trade_history_page(target)
     if not is_logged_in():
         login()
-        driver.get(trade_history_page(target))
+        goto_trade_history_page(target)
 
     ammounts = driver.find_elements_by_css_selector("td.tLeft + td.tLeft + td")
     prices = driver.find_elements_by_css_selector("td.tLeft + td.tLeft + td + td")
     times = driver.find_elements_by_css_selector("td + td.last")
     out = []
-    for i in range(len(ammounts), -1, -1):
+    for i in range(len(ammounts) - 1, -1, -1):
+        print(prices[i].text)
         price    = float(prices[i].text.replace(",", "."))
-        hour     = int(times.text.split(":")[0])
-        minute   = int(times.text.split(":")[1])
-        quantity = int(ammount[i].text.strip())
+        hour     = int(times[i].text.split(":")[0])
+        minute   = int(times[i].text.split(":")[1])
+        quantity = int("".join(ammounts[i].text.strip().split()))
         out.append(Trade(target, hour, minute, quantity, price))
 
     return out
@@ -304,7 +303,7 @@ def init():
 
     if quick_mode:
         # Disable CSS
-        profile.set_preference('permissions.default.stylesheet', 2)
+        # profile.set_preference('permissions.default.stylesheet', 2)
         # Disable images
         profile.set_preference('permissions.default.image', 2)
         # Disable Flash
