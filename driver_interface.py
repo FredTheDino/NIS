@@ -13,7 +13,8 @@ import re
 # Globals
 valid_digit = re.compile("\d+,\d+")
 valid_time = re.compile("\d+:\d+:\d+")
-site = "https://www.avanza.se/"
+site_buy = "https://www.avanza.se/handla/certifikat.html/kop/"
+site_look = "https://www.avanza.se/borshandlade-produkter/certifikat-torg/om-certifikatet.html/"
 closed = False
 writen = False
 
@@ -124,13 +125,13 @@ def get_trade_info_prices(target):
     return out
 
 def trade_history_page(stock):
-    return site + "/aktier/dagens-avslut.html" + stock.stock
+    return site_look + stock.stock
 
 def goto_trade_history_page(stock):
     driver.get(trade_history_page(stock))
 
 def buy_page(stock):
-    return site + "/handla/aktier.html/kop" + stock.stock
+    return site_buy + stock.stock
 
 def goto_buy_page(stock):
     driver.get(buy_page(stock))
