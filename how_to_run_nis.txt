@@ -37,9 +37,9 @@ Selenium:
 		"pip3 install selenium"
 
 You can now run NIS. Either with:
-	"python3 main.py"
+	"python3 state.py"
 	or
-	"python main.py"
+	"python state.py"
 depending on how it was installed.
 	
 
