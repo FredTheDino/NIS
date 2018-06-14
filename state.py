@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 # coding=utf-8
+from log import log
 import driver_interface as d
 from stocks import stocks as STOCKS
 from time import sleep 
@@ -40,7 +41,7 @@ class stock_state(object):
         if (trade.time_left < 0):
             return "Done for today"
         if (self.time_left < trade.time_left):
-            return "Allready done"
+            return "- Allready done"
 
         # We successfully baught or sold
         if (self.placed_order 
@@ -59,7 +60,7 @@ class stock_state(object):
                 self.bought_for = self.bought_for + price
                 self.holding = True
 
-        print(active_order)
+        log(active_order)
         self.last_active_order = active_order
         self.time_left = trade.time_left
         price = trade.price
@@ -213,7 +214,10 @@ def main():
                 if trans == None:
                     trans = ""
 
-                state.update(trade, trans)
+                action = state.update(trade, trans)
+                if action != "":
+                    if action[0] != "-":
+                        log(action)
 
 
         sleep(10)

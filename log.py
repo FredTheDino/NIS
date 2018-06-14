@@ -2,10 +2,13 @@ import datetime
 
 def log(message):
     stamp = get_time_stamp()
+    if message == "":
+        return
+
     print(stamp)
     print(message)
 
-    f = open("log.txt", "w")
+    f = open("log.txt", "a")
     f.write(stamp)
     f.write("\n")
     f.write(message)
