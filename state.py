@@ -119,8 +119,8 @@ class stock_state(object):
         # Logga ut vad som hände, nämligen inget.
         return ""
 
-    def handle_sell(slef, price):
-        if price <= self.get_min_sell_price(slef.time_left):
+    def handle_sell(self, price):
+        if price <= self.get_min_sell_price(self.time_left):
             # Vi säljer för att vi måste.
             self.sell(price - 0.01) # Detta kan vara lite kontroversiellt
             # Logga ut vad som hände.
@@ -162,7 +162,7 @@ class stock_state(object):
             return self.set_value(price)
 
         # Om det var länge sedan vi satte värdet, updatera det.
-        if 10 < self.time_left - self.set_at:
+        if 10 < self.set_at - self.time_left:
             self.set_value(price)
             return "Timedout, set value to {}".format(price)
         
