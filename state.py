@@ -210,10 +210,13 @@ def main():
         for state in states:
             trans = d.get_stock_state(state.stock)
             trades = d.get_trade_info_prices(state.stock)
+            log(trans)
             for trade in trades:
                 if trans == None:
                     trans = ""
+                
 
+                #trans = d.is_selling_or_buying()
                 action = state.update(trade, trans)
                 if action != "":
                     if action[0] != "-":

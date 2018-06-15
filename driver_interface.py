@@ -21,9 +21,9 @@ writen = False
 driver = None
 
 def get_stock_state(stock):
-	login()
-	goto_buy_page(stock)
-	transaction_in_progress = is_selling_or_buying()
+        login()
+        goto_buy_page(stock)
+        return is_selling_or_buying()
 	
 
 def login():
