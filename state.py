@@ -97,6 +97,9 @@ class stock_state(object):
     def get_min_value(self):
         return self.value - 0.05
 
+    def get_max_value(self):
+        return self.value + 0.05
+
     # Vi säljer
     def sell(self, price):
         if (d.place_order(self.stock, self.quantity, price, False)):
@@ -159,7 +162,7 @@ class stock_state(object):
             return self.set_value(price)
 
         # Om det var länge sedan vi satte värdet, updatera det.
-        if 30 < self.time_left - self.set_at:
+        if 10 < self.time_left - self.set_at:
             self.set_value(price)
             return "Timedout, set value to {}".format(price)
         
@@ -187,7 +190,7 @@ class stock_state(object):
 
         # Om värdet är under utgångs värdet, då
         # kollar vi om vi måste sälja.
-        elif price <= self.get_min_value():
+        elif price <= self.get_min_value() or price >= self.get_max_value():
             self.value = price
             self.peeked = 0
             return self.set_value(price)

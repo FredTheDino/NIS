@@ -25,7 +25,7 @@ class Target:
 # The second part is the max spending for a purchas.
 # The computer will buy as many as it can for this 
 # price every time. 
-stocks = [Target("/637261/bull-omx-x15-ava-4", 1,  1000)]
+stocks = [Target("/637261/bull-omx-x15-ava-4", 1008,  1000)]
             
             
 
